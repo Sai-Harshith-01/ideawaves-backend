@@ -6,10 +6,10 @@ const http = require('http');
 
 const connectDB = require('./config/db');
 
-// Load environment variables FIRST
+// ==========================
+// Load env & connect DB
+// ==========================
 dotenv.config();
-
-// Connect to MongoDB
 connectDB();
 
 const app = express();
@@ -18,12 +18,9 @@ const server = http.createServer(app);
 // ==========================
 // Middleware (ORDER MATTERS)
 // ==========================
-
-// Body parser
 app.use(express.json());
 
-// CORS configuration
-const CLIENT_URL = process.env.CLIENT_URL || 'https://your-frontend.vercel.app';
+const CLIENT_URL = process.env.CLIENT_URL || 'https://ideawaves-frontend.vercel.app';
 
 app.use(cors({
   origin: CLIENT_URL,
@@ -35,7 +32,7 @@ app.use(cors({
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // ==========================
-// Socket.IO Setup
+// Socket.IO
 // ==========================
 const { Server } = require('socket.io');
 
@@ -51,7 +48,6 @@ io.on('connection', (socket) => {
 
   socket.on('join_room', (ideaId) => {
     socket.join(ideaId);
-    console.log(`User joined room: ${ideaId}`);
   });
 
   socket.on('send_message', (data) => {
@@ -87,17 +83,15 @@ app.get('/api/health', (req, res) => {
 });
 
 // ==========================
-// Serve Frontend (NO CRASH)
+// Serve Frontend (Node 22 SAFE)
 // ==========================
 if (process.env.NODE_ENV === 'production' || process.env.RENDER) {
   const buildPath = path.join(__dirname, '../frontend/dist');
   app.use(express.static(buildPath));
 
-  // IMPORTANT: Node 22 FIX (no '*')
-  app.get('/*', (req, res) => {
-    if (!req.path.startsWith('/api')) {
-      res.sendFile(path.join(buildPath, 'index.html'));
-    }
+  // ✅ ONLY SAFE catch-all in Node 22
+  app.get(/^(?!\/api).*/, (req, res) => {
+    res.sendFile(path.join(buildPath, 'index.html'));
   });
 } else {
   app.get('/', (req, res) => {
@@ -106,7 +100,7 @@ if (process.env.NODE_ENV === 'production' || process.env.RENDER) {
 }
 
 // ==========================
-// Server Start
+// Start Server
 // ==========================
 const PORT = process.env.PORT || 5000;
 
