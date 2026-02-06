@@ -1,23 +1,17 @@
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 
-// @desc    Register a new user
-// @route   POST /api/auth/register
-// @access  Public
+// REGISTER
 const registerUser = async (req, res) => {
   const { name, email, password, skills } = req.body;
 
   try {
     if (!name || !email || !password) {
-      return res.status(400).json({
-        message: 'Please provide name, email, and password',
-      });
+      return res.status(400).json({ message: 'Please provide name, email, and password' });
     }
 
     if (password.length < 6) {
-      return res.status(400).json({
-        message: 'Password must be at least 6 characters',
-      });
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
     }
 
     const userExists = await User.findOne({ email });
@@ -45,20 +39,16 @@ const registerUser = async (req, res) => {
   }
 };
 
-// @desc    Authenticate user & get token
-// @route   POST /api/auth/login
-// @access  Public
+// LOGIN ✅ FIXED
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
     if (!email || !password) {
-      return res.status(400).json({
-        message: 'Please provide email and password',
-      });
+      return res.status(400).json({ message: 'Please provide email and password' });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select('+password'); // 🔥 FIX
 
     if (user && (await user.matchPassword(password))) {
       res.json({
@@ -77,12 +67,10 @@ const loginUser = async (req, res) => {
   }
 };
 
-// @desc    Update user profile
-// @route   PUT /api/auth/profile
-// @access  Private
+// UPDATE PROFILE
 const updateUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user._id).select('+password');
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -93,9 +81,7 @@ const updateUserProfile = async (req, res) => {
 
     if (req.body.password) {
       if (req.body.password.length < 6) {
-        return res.status(400).json({
-          message: 'Password must be at least 6 characters',
-        });
+        return res.status(400).json({ message: 'Password must be at least 6 characters' });
       }
       user.password = req.body.password;
     }
@@ -121,8 +107,4 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
-module.exports = {
-  registerUser,
-  loginUser,
-  updateUserProfile,
-};
+module.exports = { registerUser, loginUser, updateUserProfile };
