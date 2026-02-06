@@ -30,17 +30,17 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Hash password before saving
+// 🔥 FIXED PRE-SAVE HOOK
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
-    return next();
+    return next(); // ✅ MUST return
   }
+
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
-  next();
+  next(); // ✅ MUST call next
 });
 
-// Match password
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
