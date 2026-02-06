@@ -16,17 +16,33 @@ const app = express();
 const server = http.createServer(app);
 
 // ==========================
-// Middleware (ORDER MATTERS)
+// Middleware
 // ==========================
 app.use(express.json());
 
-const CLIENT_URL = process.env.CLIENT_URL || 'https://ideawaves-frontend.vercel.app';
+// ✅ ALLOWED ORIGINS (FIXED CORS)
+const allowedOrigins = [
+  'https://ideawaves-frontend.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
 
-app.use(cors({
-  origin: CLIENT_URL,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // allow requests with no origin (Postman, mobile apps)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('CORS not allowed'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  })
+);
 
 // Static uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -38,8 +54,9 @@ const { Server } = require('socket.io');
 
 const io = new Server(server, {
   cors: {
-    origin: CLIENT_URL,
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
+    credentials: true,
   },
 });
 
@@ -89,7 +106,7 @@ if (process.env.NODE_ENV === 'production' || process.env.RENDER) {
   const buildPath = path.join(__dirname, '../frontend/dist');
   app.use(express.static(buildPath));
 
-  // ✅ ONLY SAFE catch-all in Node 22
+  // ✅ Safe catch-all (Node 22)
   app.get(/^(?!\/api).*/, (req, res) => {
     res.sendFile(path.join(buildPath, 'index.html'));
   });
