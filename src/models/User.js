@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      lowercase: true, // optional but good practice
+      lowercase: true,
       trim: true,
     },
 
@@ -36,15 +36,14 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// ✅ CORRECT pre-save hook (NO arrow function)
-userSchema.pre('save', async function (next) {
+// ✅ MONGOOSE v8 SAFE PRE-SAVE HOOK
+userSchema.pre('save', async function () {
   if (!this.isModified('password')) {
-    return next();
+    return;
   }
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
-  next();
 });
 
 // ✅ Password comparison
