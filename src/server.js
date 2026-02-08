@@ -20,7 +20,7 @@ const server = http.createServer(app);
 // ==========================
 app.use(express.json());
 
-// ✅ ALLOWED ORIGINS (FIXED CORS)
+// ✅ Allowed origins
 const allowedOrigins = [
   'https://ideawaves-frontend.vercel.app',
   'http://localhost:5173',
@@ -30,9 +30,7 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // allow requests with no origin (Postman, mobile apps)
-      if (!origin) return callback(null, true);
-
+      if (!origin) return callback(null, true); // Postman, server-to-server
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -44,7 +42,7 @@ app.use(
   })
 );
 
-// Static uploads
+// Static uploads (ONLY uploads)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // ==========================
@@ -76,7 +74,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// Make socket available in controllers
 app.set('socketio', io);
 
 // ==========================
@@ -94,27 +91,16 @@ app.use('/api/requests', requestRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/chat', chatRoutes);
 
-// Health check
+// ==========================
+// Health & Root
+// ==========================
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK' });
 });
 
-// ==========================
-// Serve Frontend (Node 22 SAFE)
-// ==========================
-if (process.env.NODE_ENV === 'production' || process.env.RENDER) {
-  const buildPath = path.join(__dirname, '../frontend/dist');
-  app.use(express.static(buildPath));
-
-  // ✅ Safe catch-all (Node 22)
-  app.get(/^(?!\/api).*/, (req, res) => {
-    res.sendFile(path.join(buildPath, 'index.html'));
-  });
-} else {
-  app.get('/', (req, res) => {
-    res.send('IdeaWaves API is running...');
-  });
-}
+app.get('/', (req, res) => {
+  res.send('IdeaWaves Backend is running 🚀');
+});
 
 // ==========================
 // Start Server
