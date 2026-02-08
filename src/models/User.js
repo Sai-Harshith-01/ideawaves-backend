@@ -1,3 +1,5 @@
+console.log("✅ NEW User.js LOADED");
+
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
